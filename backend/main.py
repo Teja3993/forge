@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Request 
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database.database import get_db
 from database.models import Snippet
@@ -14,6 +15,22 @@ app = FastAPI(
     description="The backend engine for the Forge engineering workspace.",
     version="1.0.0"
 )
+# --- NEW: CORS CONFIGURATION ---
+# Define the exact URLs that are allowed to talk to our API.
+# Do NOT use ["*"] in production, as it allows any website in the world to make requests.
+origins = [
+    "http://localhost:3000",  # Our future React frontend
+    "http://127.0.0.1:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"], # Allow GET, POST, PUT, DELETE, OPTIONS
+    allow_headers=["*"], # Allow all headers (like Authorization and Content-Type)
+)
+
 
 # 1. THE MIDDLEWARE: Intercepts EVERY request to log it
 @app.middleware("http")
