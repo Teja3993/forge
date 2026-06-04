@@ -2,7 +2,7 @@
 
 I built the Python bridge to my Neon PostgreSQL database using SQLAlchemy 2.0 by creating an Engine, configuring database Sessions, defining ORM models, and successfully inserting data into the cloud database using Python objects instead of writing raw SQL manually.
 
-What I Learned
+**What I Learned**
 
 I learned how SQLAlchemy maps Python classes to database tables using declarative models.
 
