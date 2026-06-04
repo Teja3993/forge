@@ -3,18 +3,60 @@
 import React, { useState } from 'react';
 
 const HomePage = () => {
-  // 2. Define the State: 'code' holds the text, 'setCode' is the function to update it.
+  // Define the State: 'code' holds the text, 'setCode' is the function to update it.
   const [code, setCode] = useState("");
+  // State to track if currently loading(to disable the button)
+  const [isExecuting, setIsExecuting] = useState(false);
 
-  // 3. Define the Click Handler
-  const handleRunClick = () => {
-    console.log("Current Code State:", code);
-    alert("Check your browser console! State captured.");
+  // 1. Marking the function as async
+  const handleRunClick = async () => {
+    // Preventing empty submission
+    if( !code.trim()) return;
+
+    setIsExecuting(true); // locking the button
+
+    try{
+      // 2. The Fetch API
+      const response = await fetch('http://localhost:8000/snippets/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // 3. Serialize the payload. 
+        // REPLACE 'YOUR-UUID-HERE' with the real UUID from Neon DB users table!
+        body: JSON.stringify({
+          title: "My React Snippet",
+          language: "cpp",
+          code: code,
+          user_id: "8db81971-dcae-40ef-9e04-77f5c5547c2d" 
+        })
+      });
+
+      // 4. Trap check: fetch() only throws errors if the network physically fails.
+      // We must manually check if the backend returned a 400/500 error.
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // 5. Await the JSON parsing of the response body
+      const data = await response.json();
+      
+      // 6. Log the success!
+      console.log("Success! Backend saved snippet:", data);
+      alert("Snippet successfully saved to Postgres!");
+
+    } catch (error) {
+      console.error("Failed to execute code:", error);
+      alert("Network or Server Error. Check console.");
+    } finally {
+      setIsExecuting(false); // Unlock the button, even if it failed
+    }
+    
   };
   return (
     <div className="flex h-screen w-full bg-gray-900 text-gray-100 font-sans">
       
-      {/* SIDEBAR AREA (Unchanged) */}
+      {/* SIDEBAR AREA */}
       <div className="w-64 flex-shrink-0 bg-gray-800 border-r border-gray-700 flex flex-col">
         <div className="p-4 border-b border-gray-700">
           <h1 className="text-xl font-bold text-blue-400">Forge Workspace</h1>
@@ -37,18 +79,20 @@ const HomePage = () => {
              <span className="text-sm text-gray-400">Language: C++</span>
           </div>
           
-          {/* 4. Bind the onClick event to our handler */}
+          {/* Disable the button while it is executing */}
           <button 
             onClick={handleRunClick}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-400"
+            disabled = {isExecuting}
+            className={`px-6 py-2 font-bold rounded shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-400
+              ${isExecuting ? 'bg-gray-600 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
           >
-            Run Code
+            {isExecuting ? 'Executing...' : 'Run Code'}
           </button>
         </div>
 
         {/* Text Area Container */}
         <div className="flex-1 p-6 bg-[#1e1e1e]"> 
-          {/* 5. The Controlled Component: Value is locked to state, onChange updates state */}
+          {/* The Controlled Component: Value is locked to state, onChange updates state */}
           <textarea 
             value={code}
             onChange={(e) => setCode(e.target.value)}
