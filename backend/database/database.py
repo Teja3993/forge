@@ -19,3 +19,13 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # 3. The Declarative Base (The parent class for all our Models)
 class Base(DeclarativeBase):
     pass
+
+# Dependency Injector
+def get_db():
+    db = SessionLocal()
+    try:
+        # yield pauses the execution here, hands the 'db' to the route, 
+        # and waits for the route to finish before moving to the 'finally' block.
+        yield db
+    finally:
+        db.close()

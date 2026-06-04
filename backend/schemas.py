@@ -10,8 +10,7 @@ class SnippetBase(BaseModel):
 
 # 2. Properties to receive on snippet creation (The user shouldn't send an ID or Date)
 class SnippetCreate(SnippetBase):
-    pass
-    # Later, might add specific validation here, like ensuring 'language' is valid.
+    user_id: UUID # Temporary: We require the client to send this until we build JWT Auth!
 
 # 3. Properties to return to the client (The API Response)
 class SnippetResponse(SnippetBase):
