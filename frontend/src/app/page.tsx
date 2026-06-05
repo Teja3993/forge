@@ -1,14 +1,44 @@
 // This directive tells Next.js this component needs browser interactivity
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
+// 1. Define the TypeScript interface for the data (matches SnippetResponse from Pydantic)
+interface Snippet{
+  id: string;
+  title: string;
+  language: string;
+  code: string;
+  created_at: string
+}
 const HomePage = () => {
   // Define the State: 'code' holds the text, 'setCode' is the function to update it.
   const [code, setCode] = useState("");
   // State to track if currently loading(to disable the button)
   const [isExecuting, setIsExecuting] = useState(false);
 
-  // 1. Marking the function as async
+  // State to hold array of snippetsconst
+  const [history, setHistory] = useState<Snippet[]>([]);
+
+  // The Fetch function (extracted to reuse it)
+  const fetchHistory = async () => {
+    try{
+      const response = await fetch('http://localhost:8000/snippets/');
+      if (!response.ok) throw new Error("Failed to fetch history");
+      const data = await response.json();
+      setHistory(data);
+    } catch (error){
+      console.error("Error fetching history: ", error);
+    }
+  };
+  // The useEffect Hook
+  // The empty array [] means "Run this once on mount"
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+
+
+  // Marking the function as async
   const handleRunClick = async () => {
     // Preventing empty submission
     if( !code.trim()) return;
@@ -22,10 +52,10 @@ const HomePage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        // 3. Serialize the payload. 
-        // REPLACE 'YOUR-UUID-HERE' with the real UUID from Neon DB users table!
+        //  Serialize the payload. 
+        
         body: JSON.stringify({
-          title: "My React Snippet",
+          title: `Snippet ${new Date().toLocaleTimeString()}`, // Dynamic title
           language: "cpp",
           code: code,
           user_id: "8db81971-dcae-40ef-9e04-77f5c5547c2d" 
@@ -38,12 +68,15 @@ const HomePage = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      // Refreshing the history so the sidebar updates immediately
+      await fetchHistory();
+
       // 5. Await the JSON parsing of the response body
       const data = await response.json();
       
       // 6. Log the success!
-      console.log("Success! Backend saved snippet:", data);
-      alert("Snippet successfully saved to Postgres!");
+      // console.log("Success! Backend saved snippet:", data);
+      // alert("Snippet successfully saved to Postgres!");
 
     } catch (error) {
       console.error("Failed to execute code:", error);
@@ -63,10 +96,18 @@ const HomePage = () => {
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           <p className="text-xs text-gray-400 uppercase font-semibold tracking-wider mb-2">History</p>
-          <div className="p-2 rounded bg-gray-700 hover:bg-gray-600 cursor-pointer transition-colors">
-            <h3 className="text-sm font-medium">Hello World C++</h3>
-            <p className="text-xs text-gray-400">cpp • 2 hours ago</p>
-          </div>
+          {/* 6. NEW: Dynamic Rendering using .map() */}
+          {history.length === 0 ? (
+            <p className="text-sm text-gray-500 italic">No snippets yet.</p>
+          ) : (
+            history.map((snippet) => (
+              // CRITICAL: The 'key' prop is required by React to track list items
+              <div key={snippet.id} className="p-2 rounded bg-gray-700 hover:bg-gray-600 cursor-pointer transition-colors mb-2">
+                <h3 className="text-sm font-medium truncate">{snippet.title}</h3>
+                <p className="text-xs text-gray-400">{new Date(snippet.created_at).toLocaleDateString()}</p>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
